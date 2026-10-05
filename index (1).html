@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanoq sistemalarida amallar</title>
+<style>
+  /* ====== QADAM 1: Umumiy ko'rinish (dizayn) ====== */
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: #eef2f7;
+    margin: 0;
+    padding: 40px 12px;
+    display: flex;
+    justify-content: center;
+  }
+  .container {
+    width: 100%;
+    max-width: 620px;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 30px 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+  }
+  h1 {
+    font-size: 28px;
+    text-align: center;
+    margin: 0 0 6px 0;
+    color: #1e293b;
+  }
+  .subtitle {
+    text-align: center;
+    color: #64748b;
+    font-size: 16px;
+    margin: 0 0 22px 0;
+  }
+  label {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 16px;
+    color: #334155;
+  }
+  input[type="text"], select {
+    width: 100%;
+    padding: 13px;
+    font-size: 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    margin-top: 6px;
+    outline: none;
+  }
+  input[type="text"]:focus, select:focus {
+    border-color: #2563eb;
+  }
+  button {
+    width: 100%;
+    margin-top: 26px;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: #1d4ed8; }
+  button:disabled { background: #93b4f0; cursor: not-allowed; }
+
+  .xatolik {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .natija-blok {
+    margin-top: 24px;
+    padding: 20px;
+    background: #dcfce7;
+    border-radius: 14px;
+    text-align: center;
+  }
+  .natija-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #15803d;
+  }
+  .natija-matni {
+    font-size: 40px;
+    font-weight: 900;
+    color: #166534;
+    margin-top: 4px;
+    word-break: break-all;
+  }
+  hr { margin: 28px 0; border: none; border-top: 1px solid #e2e8f0; }
+  h2 { font-size: 21px; color: #1e293b; margin-top: 0; }
+  .yuklanmoqda { text-align: center; color: #94a3b8; font-size: 15px; }
+  .tarix-royxati { list-style: none; padding: 0; margin: 10px 0 0 0; }
+  .tarix-royxati li {
+    padding: 12px 6px;
+    border-bottom: 1px solid #eef2f7;
+    font-size: 17px;
+    color: #1e293b;
+  }
+  .tarix-royxati li.bosh {
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+  }
+  .yoriqnoma {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 20px 22px;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #334155;
+  }
+  .yoriqnoma li { margin-bottom: 9px; }
+  code {
+    background: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<!--
+=====================================================================================
+SUPABASE UCHUN TAYYOR SQL KOD
+Quyidagi kodni Supabase loyihangizdagi "SQL Editor" bo'limiga nusxalab,
+"RUN" tugmasini bosing. Bu jadval yaratadi va xavfsizlik siyosatlarini (RLS) sozlaydi.
+
+-- 1) Jadval yaratish
+create table if not exists public.hisoblashlar (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  son1 text not null,
+  son2 text not null,
+  sanoq_sistema text not null,
+  amal text not null,
+  natija text not null
+);
+
+-- 2) Row Level Security (RLS) ni yoqish
+alter table public.hisoblashlar enable row level security;
+
+-- 3) Anon (ochiq, kalitsiz) foydalanuvchiga yozuv QO'SHISHGA ruxsat berish
+create policy "Anon foydalanuvchi qo'sha oladi"
+  on public.hisoblashlar
+  for insert
+  to anon
+  with check (true);
+
+-- 4) Anon foydalanuvchiga yozuvlarni O'QISHGA ruxsat berish
+create policy "Anon foydalanuvchi o'qiy oladi"
+  on public.hisoblashlar
+  for select
+  to anon
+  using (true);
+=====================================================================================
+-->
+
+<div class="container">
+
+  <h1>SANOQ SISTEMALARIDA AMALLAR</h1>
+  <p class="subtitle">Ikkilik, sakkizlik, o'nlik va o'n oltilik sistemalarda qo'shish, ayirish va ko'paytirish</p>
+
+  <!-- QADAM 2: Foydalanuvchi ma'lumot kiritadigan forma -->
+  <form id="hisoblashForma">
+
+    <label for="son1">1-SON:</label>
+    <input type="text" id="son1" placeholder="Masalan: 1010" autocomplete="off">
+
+    <label for="son2">2-SON:</label>
+    <input type="text" id="son2" placeholder="Masalan: 11" autocomplete="off">
+
+    <label for="sanoqSistema">SANOQ SISTEMASI:</label>
+    <select id="sanoqSistema">
+      <option value="2">IKKILIK (2)</option>
+      <option value="8">SAKKIZLIK (8)</option>
+      <option value="10" selected>O'NLIK (10)</option>
+      <option value="16">O'N OLTILIK (16)</option>
+    </select>
+
+    <label for="amal">AMAL:</label>
+    <select id="amal">
+      <option value="qoshish">QO'SHISH ( + )</option>
+      <option value="ayirish">AYIRISH ( - )</option>
+      <option value="kopaytirish">KO'PAYTIRISH ( x )</option>
+    </select>
+
+    <button type="submit" id="yuborishTugmasi">HISOBLASH VA SAQLASH</button>
+  </form>
+
+  <!-- Xatolik bo'lsa shu yerda ko'rinadi -->
+  <div id="xatolik" class="xatolik" style="display:none;"></div>
+
+  <!-- Natija katta harflarda shu yerda ko'rinadi -->
+  <div id="natijaBlok" class="natija-blok" style="display:none;">
+    <div class="natija-label">NATIJA:</div>
+    <div id="natijaMatni" class="natija-matni"></div>
+  </div>
+
+  <hr>
+
+  <h2>SAQLANGAN HISOBLAR TARIXI</h2>
+  <div id="yuklanmoqda" class="yuklanmoqda">Yuklanmoqda...</div>
+  <ul id="tarixRoyxati" class="tarix-royxati"></ul>
+
+  <hr>
+
+  <div class="yoriqnoma">
+    <h2>YO'RIQNOMA (Supabase sozlash)</h2>
+    <ol>
+      <li><b>Loyiha ochish:</b> <code>supabase.com</code> saytiga kiring, ro'yxatdan o'ting va "New Project" tugmasi orqali yangi loyiha yarating. Parol va mintaqani tanlab, "Create" bosing.</li>
+      <li><b>Jadval yaratish:</b> Chap menyudan "SQL Editor" ni oching, yuqoridagi faylning boshida izoh ichida yozilgan SQL kodni to'liq nusxalab joylashtiring va "RUN" tugmasini bosing. Bu <code>hisoblashlar</code> jadvalini va kerakli ruxsatlarni (policy) yaratadi.</li>
+      <li><b>URL va ANON KEY olish:</b> Chap menyudan "Project Settings" &gt; "API" bo'limiga kiring. U yerdan <code>Project URL</code> va <code>anon public</code> kalitni nusxalab oling.</li>
+      <li><b>Kodga joylashtirish:</b> Shu faylning pastidagi <code>&lt;script&gt;</code> qismida <code>SUPABASE_URL</code> va <code>SUPABASE_ANON_KEY</code> o'zgaruvchilariga o'sha qiymatlarni joylashtiring.</li>
+      <li><b>"row-level security policy" xatosi chiqsa:</b> Bu RLS siyosatlari to'g'ri yaratilmaganini bildiradi. SQL Editor'ga qaytib, yuqoridagi 2, 3, 4-qadamlardagi SQL buyruqlarini (ayniqsa <code>create policy</code> qatorlarini) qayta ishga tushiring va jadval nomi (<code>hisoblashlar</code>) kodda yozilgan nom bilan bir xilligiga ishonch hosil qiling.</li>
+    </ol>
+  </div>
+
+</div>
+
+<!-- QADAM 3: Supabase kutubxonasini CDN orqali ulaymiz -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  // ============================================================
+  // QADAM 4: Supabase ulanish ma'lumotlari
+  // Bu yerga faqat ANON (public) kalitni qo'ying.
+  // Service_role kalitini HECH QACHON bu yerga yozmang!
+  // ============================================================
+  const SUPABASE_URL = "https://SIZNING-PROJECT-ID.supabase.co"; // <-- bu yerga o'z qiymatlaringizni qo'ying
+  const SUPABASE_ANON_KEY = "SIZNING_ANON_KEY_SHU_YERGA"; // <-- bu yerga o'z qiymatlaringizni qo'ying
+
+  // Supabase mijozini (client) yaratamiz
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ============================================================
+  // QADAM 5: Sahifadagi elementlarni o'zgaruvchilarga bog'laymiz
+  // ============================================================
+  const forma              = document.getElementById('hisoblashForma');
+  const son1Input          = document.getElementById('son1');
+  const son2Input          = document.getElementById('son2');
+  const sanoqSistemaSelect = document.getElementById('sanoqSistema');
+  const amalSelect         = document.getElementById('amal');
+  const yuborishTugmasi    = document.getElementById('yuborishTugmasi');
+
+  const xatolikEl     = document.getElementById('xatolik');
+  const natijaBlokEl  = document.getElementById('natijaBlok');
+  const natijaMatniEl = document.getElementById('natijaMatni');
+
+  const yuklanmoqdaEl = document.getElementById('yuklanmoqda');
+  const tarixEl       = document.getElementById('tarixRoyxati');
+
+  // ============================================================
+  // QADAM 6: Sahifa ochilganda, saqlangan tarixni Supabase'dan o'qib olamiz
+  // ============================================================
+  document.addEventListener('DOMContentLoaded', tarixniYukla);
+
+  async function tarixniYukla() {
+    yuklanmoqdaEl.style.display = 'block';
+    try {
+      // "hisoblashlar" jadvalidan so'nggi 20 ta yozuvni, eng yangisidan boshlab olamiz
+      const natijaObj = await supabase
+        .from('hisoblashlar')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (natijaObj.error) {
+        throw natijaObj.error;
+      }
+
+      royxatniChizish(natijaObj.data);
+    } catch (err) {
+      // Tarmoq yoki Supabase xatosi bo'lsa, ekranda ko'rsatamiz
+      xatolikniKorsat("Tarixni yuklashda xatolik: " + err.message);
+    } finally {
+      yuklanmoqdaEl.style.display = 'none';
+    }
+  }
+
+  // Tarix ro'yxatini ekranga chizadigan funksiya
+  function royxatniChizish(royxat) {
+    tarixEl.innerHTML = '';
+
+    if (!royxat || royxat.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'bosh';
+      li.textContent = "Hozircha yozuv yo'q";
+      tarixEl.appendChild(li);
+      return;
+    }
+
+    royxat.forEach(function (item) {
+      const li = document.createElement('li');
+      const bazaNomi   = bazaNomini(item.sanoq_sistema);
+      const amalBelgi  = amalBelgisi(item.amal);
+      li.textContent = item.son1 + " " + amalBelgi + " " + item.son2 + " = " + item.natija + "  (" + bazaNomi + ")";
+      tarixEl.appendChild(li);
+    });
+  }
+
+  function bazaNomini(baza) {
+    const nomlar = { "2": "Ikkilik", "8": "Sakkizlik", "10": "O'nlik", "16": "O'n oltilik" };
+    return nomlar[String(baza)] || baza;
+  }
+
+  function amalBelgisi(amal) {
+    const belgilar = { qoshish: "+", ayirish: "-", kopaytirish: "x" };
+    return belgilar[amal] || amal;
+  }
+
+  // ============================================================
+  // QADAM 7: Son kiritilgan sanoq sistemasiga mosligini tekshirish
+  // ============================================================
+  function sonTogriMi(son, baza) {
+    // Masalan, 16-lik sistema uchun ruxsat etilgan belgilar: 0-9 va a-f
+    const barchaBelgilar = "0123456789abcdefghijklmnopqrstuvwxyz";
+    const ruxsatEtilgan = barchaBelgilar.slice(0, baza);
+    const qoida = new RegExp("^[" + ruxsatEtilgan + "]+$", "i");
+    return qoida.test(son);
+  }
+
+  // ============================================================
+  // QADAM 8: Asosiy hisoblash funksiyasi
+  // ============================================================
+  function hisoblash(son1, son2, baza, amal) {
+    // parseInt sonni berilgan sanoq sistemasidan o'nlikka o'giradi
+    const n1 = parseInt(son1, baza);
+    const n2 = parseInt(son2, baza);
+
+    let natijaOnlikda;
+    if (amal === 'qoshish') {
+      natijaOnlikda = n1 + n2;
+    } else if (amal === 'ayirish') {
+      natijaOnlikda = n1 - n2;
+    } else if (amal === 'kopaytirish') {
+      natijaOnlikda = n1 * n2;
+    } else {
+      throw new Error("Noma'lum amal tanlandi");
+    }
+
+    // toString(baza) natijani kerakli sanoq sistemasiga qaytarib beradi
+    return natijaOnlikda.toString(baza).toUpperCase();
+  }
+
+  // Xatolikni ekranda ko'rsatish
+  function xatolikniKorsat(matn) {
+    xatolikEl.textContent = matn;
+    xatolikEl.style.display = 'block';
+  }
+
+  // ============================================================
+  // QADAM 9: Forma yuborilganda ishlaydigan asosiy jarayon
+  // ============================================================
+  forma.addEventListener('submit', async function (hodisa) {
+    hodisa.preventDefault(); // Sahifa qayta yuklanib ketmasligi uchun
+
+    // Oldingi xabarlarni yashiramiz
+    xatolikEl.style.display = 'none';
+    natijaBlokEl.style.display = 'none';
+
+    const son1 = son1Input.value.trim();
+    const son2 = son2Input.value.trim();
+    const baza = parseInt(sanoqSistemaSelect.value, 10);
+    const amal = amalSelect.value;
+
+    // --- Bo'sh maydonlarni tekshirish ---
+    if (!son1 || !son2) {
+      xatolikniKorsat("Iltimos, ikkala sonni ham kiriting!");
+      return;
+    }
+
+    // --- Sonlar tanlangan sanoq sistemasiga mosligini tekshirish ---
+    if (!sonTogriMi(son1, baza) || !sonTogriMi(son2, baza)) {
+      xatolikniKorsat("Kiritilgan sonlar " + baza + "-sanoq sistemasiga mos emas. Iltimos, to'g'ri son kiriting.");
+      return;
+    }
+
+    // --- Hisoblashni bajarish ---
+    let natija;
+    try {
+      natija = hisoblash(son1, son2, baza, amal);
+    } catch (err) {
+      xatolikniKorsat(err.message);
+      return;
+    }
+
+    // --- Natijani ekranda darhol ko'rsatish ---
+    natijaMatniEl.textContent = natija;
+    natijaBlokEl.style.display = 'block';
+
+    // --- Tugmani vaqtincha o'chirib, "Yuborilmoqda..." deb yozamiz ---
+    yuborishTugmasi.disabled = true;
+    const eskiMatn = yuborishTugmasi.textContent;
+    yuborishTugmasi.textContent = "YUBORILMOQDA...";
+
+    // --- Natijani Supabase bazasiga saqlaymiz ---
+    try {
+      const saqlashNatijasi = await supabase
+        .from('hisoblashlar')
+        .insert([{
+          son1: son1,
+          son2: son2,
+          sanoq_sistema: String(baza),
+          amal: amal,
+          natija: natija
+        }]);
+
+      if (saqlashNatijasi.error) {
+        throw saqlashNatijasi.error;
+      }
+
+      // Saqlangandan so'ng tarix ro'yxatini yangilaymiz
+      await tarixniYukla();
+
+    } catch (err) {
+      xatolikniKorsat("Saqlashda xatolik yuz berdi: " + err.message);
+    } finally {
+      // Tarmoq tez bo'ladimi, sekin bo'ladimi — tugma har doim qayta yoqiladi
+      yuborishTugmasi.disabled = false;
+      yuborishTugmasi.textContent = eskiMatn;
+    }
+  });
+</script>
+
+</body>
+</html>
