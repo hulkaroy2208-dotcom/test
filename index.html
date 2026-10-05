@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kompyuter xotira qurilmalari - 9-sinf darsi</title>
+
+<!--
+  ========================================================================
+  TAYYOR SQL KOD (Supabase SQL Editor'ga nusxalab qo'ying)
+  ========================================================================
+  1) Supabase saytida loyihangizni oching.
+  2) Chap menyudan "SQL Editor" bo'limiga kiring.
+  3) "New query" tugmasini bosing va quyidagi kodni to'liq nusxalab qo'ying.
+  4) "Run" tugmasini bosing - jadval va ruxsatlar (policy) avtomatik yaratiladi.
+
+  create table if not exists xotira_fikrlari (
+    id uuid primary key default gen_random_uuid(),
+    created_at timestamptz not null default now(),
+    ism text not null,
+    xotira_turi text not null,
+    fikr text not null
+  );
+
+  -- Row Level Security (RLS) ni yoqamiz. Bu jadvalni "himoyalangan" qiladi,
+  -- ya'ni quyida policy (ruxsat) yozmasak hech kim ma'lumot o'qiy yoki yoza olmaydi.
+  alter table xotira_fikrlari enable row level security;
+
+  -- Anon (maxfiy bo'lmagan, oddiy) foydalanuvchilarga YANGI yozuv QO'SHISH (insert) ruxsati
+  create policy "Anon insert uchun ruxsat"
+  on xotira_fikrlari
+  for insert
+  to anon
+  with check (true);
+
+  -- Anon foydalanuvchilarga mavjud yozuvlarni O'QISH (select) ruxsati
+  create policy "Anon select uchun ruxsat"
+  on xotira_fikrlari
+  for select
+  to anon
+  using (true);
+  ========================================================================
+-->
+
+<style>
+  /* ============ UMUMIY SOZLAMALAR ============ */
+  /* "box-sizing: border-box" - element o'lchamini hisoblashni osonlashtiradi,
+     padding qo'shilganda element kattalashib ketmasligi uchun kerak. */
+  * {
+    box-sizing: border-box;
+    font-family: "Pretendard", "Segoe UI", Arial, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    background: #f4f6f8;
+    color: #1a1a1a;
+    font-size: 20px; /* Katta harf - 9-sinf o'quvchilari uchun o'qish qulay bo'lsin */
+    line-height: 1.5;
+  }
+
+  /* ============ SARLAVHA QISMI ============ */
+  header {
+    background: #2b50aa;
+    color: #ffffff;
+    padding: 24px 16px;
+    text-align: center;
+    position: relative;
+  }
+
+  header h1 {
+    margin: 0 0 6px 0;
+    font-size: 34px;
+  }
+
+  header p {
+    margin: 0;
+    font-size: 20px;
+    opacity: 0.9;
+  }
+
+  /* 5 daqiqalik taymer katta va ko'rinarli bo'lsin */
+  #taymer-quti {
+    margin-top: 14px;
+    display: inline-block;
+    background: #ffffff;
+    color: #2b50aa;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-size: 26px;
+    font-weight: bold;
+  }
+
+  /* ============ ASOSIY KONTENT ============ */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  h2.bolim-sarlavha {
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+
+  /* 3 ta ustunli joylashuv - "Ekran: 3 ga bo'l" talabiga javoban */
+  .xotira-katak {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 36px;
+  }
+
+  /* Kichik ekranlarda (telefon) 3 ustun emas, 1 ustun bo'lib tushsin */
+  @media (max-width: 800px) {
+    .xotira-katak {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .karta {
+    background: #ffffff;
+    border: 3px solid #ccc;
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .karta.tashqi { border-color: #e07b00; }
+  .karta.ichki { border-color: #2b50aa; }
+  .karta.tezkor { border-color: #1e8a4c; }
+
+  .karta h3 {
+    font-size: 26px;
+    margin-top: 0;
+    text-align: center;
+  }
+
+  .karta.tashqi h3 { color: #e07b00; }
+  .karta.ichki h3 { color: #2b50aa; }
+  .karta.tezkor h3 { color: #1e8a4c; }
+
+  .karta ul {
+    padding-left: 22px;
+    font-size: 19px;
+  }
+
+  .karta li {
+    margin-bottom: 10px;
+  }
+
+  .belgi {
+    font-weight: bold;
+  }
+
+  /* ============ FIKR BILDIRISH FORMASI ============ */
+  .forma-quti {
+    background: #ffffff;
+    border: 3px solid #ccc;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 30px;
+  }
+
+  label {
+    display: block;
+    font-weight: bold;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    font-size: 19px;
+  }
+
+  input[type="text"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 19px;
+    border: 2px solid #999;
+    border-radius: 8px;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 70px;
+  }
+
+  #yuborish-tugmasi {
+    margin-top: 18px;
+    width: 100%;
+    padding: 16px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffffff;
+    background: #2b50aa;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  #yuborish-tugmasi:disabled {
+    background: #9aa6c4;
+    cursor: not-allowed;
+  }
+
+  #xato-xabari {
+    margin-top: 14px;
+    padding: 12px;
+    background: #ffe3e3;
+    color: #a30000;
+    border: 2px solid #a30000;
+    border-radius: 8px;
+    font-size: 18px;
+    display: none; /* Faqat xatolik bo'lganda ko'rinadi */
+  }
+
+  /* ============ YOZUVLAR RO'YXATI ============ */
+  .royxat-quti {
+    background: #ffffff;
+    border: 3px solid #ccc;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 30px;
+  }
+
+  .fikr-kartasi {
+    border-bottom: 2px solid #e5e5e5;
+    padding: 12px 0;
+  }
+
+  .fikr-kartasi:last-child {
+    border-bottom: none;
+  }
+
+  .fikr-kartasi .ism-va-tur {
+    font-weight: bold;
+    font-size: 20px;
+  }
+
+  .fikr-kartasi .sana {
+    font-size: 15px;
+    color: #777;
+  }
+
+  /* ============ YO'RIQNOMA (QO'LLANMA) QISMI ============ */
+  details {
+    background: #fffbe6;
+    border: 3px solid #e0c200;
+    border-radius: 14px;
+    padding: 18px;
+    font-size: 18px;
+  }
+
+  summary {
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  details ol {
+    padding-left: 22px;
+  }
+
+  details li {
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 1-QADAM: SARLAVHA VA TAYMER ============ -->
+<header>
+  <h1>Kompyuterning xotira qurilmalari</h1>
+  <p>9-sinf o'quvchilari uchun dars vositasi</p>
+  <div id="taymer-quti">Qolgan vaqt: <span id="vaqt">5:00</span></div>
+</header>
+
+<main>
+
+  <!-- ============ 2-QADAM: 3 TA XOTIRA TURI (EKRAN 3 GA BO'LINGAN) ============ -->
+  <h2 class="bolim-sarlavha">Xotira turlari haqida ma'lumot</h2>
+
+  <div class="xotira-katak">
+
+    <!-- Birinchi ustun: Tashqi xotira -->
+    <div class="karta tashqi">
+      <h3>Tashqi xotira</h3>
+      <ul>
+        <li><span class="belgi">Nima bu:</span> Kompyuterdan ajratib olib yurish mumkin bo'lgan xotira qurilmalari.</li>
+        <li><span class="belgi">Misollar:</span> Flesh-disk (USB), tashqi qattiq disk, xotira kartasi, CD/DVD.</li>
+        <li><span class="belgi">Tezligi:</span> Past yoki o'rta - ma'lumot sekinroq o'qiladi va yoziladi.</li>
+        <li><span class="belgi">Chidamliligi:</span> Yuqori - quvvat o'chsa ham ma'lumot yo'qolmaydi, uzoq saqlanadi.</li>
+      </ul>
+    </div>
+
+    <!-- Ikkinchi ustun: Ichki xotira -->
+    <div class="karta ichki">
+      <h3>Ichki xotira</h3>
+      <ul>
+        <li><span class="belgi">Nima bu:</span> Kompyuter korpusi ichiga o'rnatilgan, doimiy ma'lumot saqlovchi qurilma.</li>
+        <li><span class="belgi">Misollar:</span> Qattiq disk (HDD), SSD disk, ROM xotira.</li>
+        <li><span class="belgi">Tezligi:</span> O'rta (HDD) dan yuqorigacha (SSD) - tashqi xotiradan tezroq.</li>
+        <li><span class="belgi">Chidamliligi:</span> Yuqori - dasturlar, operatsion tizim va fayllar uzoq muddat saqlanadi.</li>
+      </ul>
+    </div>
+
+    <!-- Uchinchi ustun: Tezkor xotira -->
+    <div class="karta tezkor">
+      <h3>Tezkor xotira (RAM)</h3>
+      <ul>
+        <li><span class="belgi">Nima bu:</span> Protsessor bilan bevosita ishlaydigan vaqtinchalik xotira.</li>
+        <li><span class="belgi">Misollar:</span> RAM (operativ xotira) moduli.</li>
+        <li><span class="belgi">Tezligi:</span> Juda yuqori - ma'lumotlar bir zumda o'qiladi va yoziladi.</li>
+        <li><span class="belgi">Chidamliligi:</span> Past - kompyuter o'chirilsa, undagi ma'lumot butunlay yo'qoladi.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ============ 3-QADAM: FIKR BILDIRISH FORMASI (SUPABASE'GA YOZISH) ============ -->
+  <h2 class="bolim-sarlavha">Fikringizni bildiring</h2>
+
+  <div class="forma-quti">
+    <form id="fikr-formasi">
+
+      <label for="ism-input">Ismingiz:</label>
+      <input type="text" id="ism-input" placeholder="Masalan: Aziza">
+
+      <label for="xotira-select">Eng muhim deb hisoblagan xotira turingiz:</label>
+      <select id="xotira-select">
+        <option value="">-- Tanlang --</option>
+        <option value="Tashqi xotira">Tashqi xotira</option>
+        <option value="Ichki xotira">Ichki xotira</option>
+        <option value="Tezkor xotira">Tezkor xotira</option>
+      </select>
+
+      <label for="fikr-input">Nima uchun shunday deb o'ylaysiz?</label>
+      <textarea id="fikr-input" placeholder="Fikringizni shu yerga yozing..."></textarea>
+
+      <button type="submit" id="yuborish-tugmasi">Yuborish</button>
+
+      <!-- Xatolik bo'lsa shu yerda ko'rinadi -->
+      <div id="xato-xabari"></div>
+    </form>
+  </div>
+
+  <!-- ============ 4-QADAM: YUBORILGAN FIKRLAR RO'YXATI ============ -->
+  <h2 class="bolim-sarlavha">Sinfdoshlar fikrlari</h2>
+
+  <div class="royxat-quti">
+    <div id="fikrlar-royxati">Yuklanmoqda...</div>
+  </div>
+
+  <!-- ============ 5-QADAM: YO'RIQNOMA (QO'LLANMA) ============ -->
+  <details>
+    <summary>O'qituvchi uchun yo'riqnoma (bosib oching)</summary>
+    <ol>
+      <li><b>Supabase'da loyiha ochish:</b> supabase.com saytiga kiring, ro'yxatdan o'ting va "New Project" tugmasi orqali yangi loyiha yarating. Parol so'ralsa, uni eslab qoling.</li>
+      <li><b>Jadval yaratish:</b> Loyiha ochilgach, chap menyudan "SQL Editor" ga kiring va shu faylning yuqori qismidagi (boshidagi izoh ichidagi) SQL kodni to'liq nusxalab, "Run" tugmasini bosing.</li>
+      <li><b>URL va ANON KEY qayerdan olinadi:</b> Chap menyudan "Project Settings" -> "API" bo'limiga kiring. U yerda "Project URL" va "anon public" kaliti ko'rsatilgan bo'ladi. Ularni nusxalab, shu faylning JavaScript qismidagi SUPABASE_URL va SUPABASE_ANON_KEY o'zgaruvchilariga joylashtiring.</li>
+      <li><b>"Row Level Security policy" xatosi chiqsa:</b> Bu SQL kodidagi "create policy" qismlari ishlamaganini bildiradi. SQL Editor'ga qaytib, yuqoridagi SQL kodni (ayniqsa "create policy" qatorlarini) qayta ishga tushiring. Jadval nomi va ustun nomlari xato yozilmaganini tekshiring.</li>
+      <li><b>Darsni boshlash:</b> Faylni brauzerda oching (ikki marta bosish kifoya). Taymer avtomatik 5 daqiqadan boshlab orqaga sanay boshlaydi.</li>
+    </ol>
+  </details>
+
+</main>
+
+<!-- ============ 6-QADAM: SUPABASE ULANISHI (CDN ORQALI) ============ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  /* ========================================================================
+     BU YERGA O'Z QIYMATLARINGIZNI QO'YING
+     ======================================================================== */
+  const SUPABASE_URL = "https://SIZNING-LOYIHA-ID.supabase.co"; // <-- bu yerga o'z qiymatlaringizni qo'ying
+  const SUPABASE_ANON_KEY = "SIZNING-ANON-KALITINGIZ"; // <-- bu yerga o'z qiymatlaringizni qo'ying
+
+  /* CDN orqali ulangan kutubxona "supabase" nomli global obyekt yaratadi.
+     Undan "createClient" funksiyasini olib, o'z mijozimizni (client) yasaymiz.
+     Diqqat: o'zgaruvchiga "supabase" deb emas, "supabaseMijoz" deb nom berdik,
+     chunki "supabase" nomi global kutubxona uchun band. */
+  const { createClient } = window.supabase;
+  const supabaseMijoz = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ========================================================================
+     SAHIFADAGI ELEMENTLARNI O'ZGARUVCHILARGA OLAMIZ
+     ======================================================================== */
+  const forma = document.getElementById("fikr-formasi");
+  const ismInput = document.getElementById("ism-input");
+  const xotiraSelect = document.getElementById("xotira-select");
+  const fikrInput = document.getElementById("fikr-input");
+  const yuborishTugmasi = document.getElementById("yuborish-tugmasi");
+  const xatoXabari = document.getElementById("xato-xabari");
+  const fikrlarRoyxati = document.getElementById("fikrlar-royxati");
+  const vaqtElementi = document.getElementById("vaqt");
+
+  /* ========================================================================
+     XATOLIKNI EKRANDA KO'RSATISH UCHUN YORDAMCHI FUNKSIYALAR
+     ======================================================================== */
+  function xatoChiqarish(matn) {
+    xatoXabari.textContent = matn;
+    xatoXabari.style.display = "block";
+  }
+
+  function xatoniYashirish() {
+    xatoXabari.textContent = "";
+    xatoXabari.style.display = "none";
+  }
+
+  /* ========================================================================
+     7-QADAM: 5 DAQIQALIK TAYMER
+     "Cheklovlar: 5 minut" talabiga javoban - sahifa ochilgach
+     5 daqiqadan (300 soniyadan) orqaga sanaladi.
+     ======================================================================== */
+  let qolganVaqt = 300; // 5 daqiqa = 300 soniya
+
+  function vaqtniYangilash() {
+    const daqiqa = Math.floor(qolganVaqt / 60);
+    const soniya = qolganVaqt % 60;
+    const soniyaMatni = soniya < 10 ? "0" + soniya : String(soniya);
+    vaqtElementi.textContent = daqiqa + ":" + soniyaMatni;
+
+    if (qolganVaqt <= 0) {
+      clearInterval(taymerIntervali);
+      vaqtElementi.textContent = "Vaqt tugadi!";
+      vaqtElementi.parentElement.style.background = "#ffd4d4";
+      vaqtElementi.parentElement.style.color = "#a30000";
+      // Vaqt tugaganda fikr yuborish tugmasini o'chirib qo'yamiz
+      yuborishTugmasi.disabled = true;
+      return;
+    }
+    qolganVaqt = qolganVaqt - 1;
+  }
+
+  const taymerIntervali = setInterval(vaqtniYangilash, 1000);
+
+  /* ========================================================================
+     8-QADAM: MAVJUD FIKRLARNI SUPABASE'DAN O'QIB, RO'YXATDA KO'RSATISH
+     ======================================================================== */
+  async function fikrlarniYuklash() {
+    try {
+      // "select *" - jadvaldagi barcha ustunlarni olamiz
+      // "order" - eng yangi yozuv birinchi bo'lib chiqishi uchun
+      const natija = await supabaseMijoz
+        .from("xotira_fikrlari")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (natija.error) {
+        throw natija.error;
+      }
+
+      fikrlarniKorsatish(natija.data);
+    } catch (xatolik) {
+      xatoChiqarish("Ro'yxatni yuklashda xatolik: " + xatolik.message);
+    }
+  }
+
+  function fikrlarniKorsatish(royxat) {
+    // Avval ro'yxatni tozalaymiz
+    fikrlarRoyxati.innerHTML = "";
+
+    if (!royxat || royxat.length === 0) {
+      fikrlarRoyxati.textContent = "Hozircha yozuv yo'q";
+      return;
+    }
+
+    royxat.forEach(function (fikr) {
+      const kartaDiv = document.createElement("div");
+      kartaDiv.className = "fikr-kartasi";
+
+      const sana = new Date(fikr.created_at).toLocaleString("uz-UZ");
+
+      kartaDiv.innerHTML =
+        '<div class="ism-va-tur">' + fikr.ism + " — " + fikr.xotira_turi + "</div>" +
+        "<div>" + fikr.fikr + "</div>" +
+        '<div class="sana">' + sana + "</div>";
+
+      fikrlarRoyxati.appendChild(kartaDiv);
+    });
+  }
+
+  /* ========================================================================
+     9-QADAM: FORMA YUBORILGANDA YANGI YOZUV QO'SHISH
+     ======================================================================== */
+  forma.addEventListener("submit", async function (hodisa) {
+    // Sahifa avtomatik qayta yuklanib ketmasligi uchun
+    hodisa.preventDefault();
+
+    xatoniYashirish();
+
+    // Maydonlardagi qiymatlarni olamiz, boshi va oxiridagi bo'sh joylarni olib tashlaymiz
+    const ism = ismInput.value.trim();
+    const xotiraTuri = xotiraSelect.value;
+    const fikr = fikrInput.value.trim();
+
+    // Bo'sh maydonlarni tekshiramiz - hammasi to'ldirilgan bo'lishi shart
+    if (ism === "" || xotiraTuri === "" || fikr === "") {
+      xatoChiqarish("Iltimos, barcha maydonlarni to'ldiring!");
+      return;
+    }
+
+    // Tugmani vaqtincha o'chiramiz va matnini o'zgartiramiz,
+    // foydalanuvchi qayta-qayta bosib, bir xil yozuvni ikki marta yubormasligi uchun
+    yuborishTugmasi.disabled = true;
+    yuborishTugmasi.textContent = "Yuborilmoqda...";
+
+    try {
+      const natija = await supabaseMijoz
+        .from("xotira_fikrlari")
+        .insert([
+          {
+            ism: ism,
+            xotira_turi: xotiraTuri,
+            fikr: fikr
+          }
+        ]);
+
+      if (natija.error) {
+        throw natija.error;
+      }
+
+      // Muvaffaqiyatli bo'lsa - formani tozalaymiz va ro'yxatni yangilaymiz
+      forma.reset();
+      await fikrlarniYuklash();
+    } catch (xatolik) {
+      xatoChiqarish("Yuborishda xatolik: " + xatolik.message);
+    } finally {
+      // Tarmoq sekin bo'lsa ham, javob kelgach tugma albatta yoqiladi
+      yuborishTugmasi.disabled = false;
+      yuborishTugmasi.textContent = "Yuborish";
+    }
+  });
+
+  /* ========================================================================
+     10-QADAM: SAHIFA OCHILGANDA MAVJUD YOZUVLARNI DARHOL YUKLASH
+     ======================================================================== */
+  fikrlarniYuklash();
+</script>
+
+</body>
+</html>
